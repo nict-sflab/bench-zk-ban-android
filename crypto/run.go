@@ -9,13 +9,15 @@ import (
 	_ "golang.org/x/mobile/bind"
 )
 
-func Benchmark() string {
+func Benchmark(path string) string {
 	loop := 20
 
-	test.SkipVerify = true
-
 	b := usefulbench.New(loop)
+	test.TestKeyPath = path
+
+	latency.BenchmarkBaselineLoad(b)
 	latency.BenchmarkBaseline(b)
+	
 	res := b.ResultJson()
 	fmt.Printf("%v\n", res)
 

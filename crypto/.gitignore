@@ -1,2 +1,5 @@
 zk-ban-bench.aar
 zk-ban-bench-sources.jar
+
+*.json
+*.bin

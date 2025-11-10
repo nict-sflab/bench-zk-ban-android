@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
         Log.d("zk-ban-bench", "$previous")
 
         thread {
-            val result = benchmark()!!
+            val result = benchmark(path)!!
 
             GlobalScope.launch(Dispatchers.Main) {
                 val edit = sharedPref.edit()
