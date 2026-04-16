@@ -1,32 +1,48 @@
-let pkgs = import <nixpkgs> {};
+let
+  pkgs = import <nixpkgs> {
+    config.android_sdk.accept_license = true;
+  };
 
-in pkgs.mkShell rec {
-  name = "zk-ban-bench";
+  androidComposition = pkgs.androidenv.composeAndroidPackages {
+    platformVersions = [ "35" ];
+    includeNDK = true;
+  };
+in
+pkgs.mkShell rec {
+  name = "go-android-bind-dev";
 
-  buildInputs = with pkgs; [
-    # android-studio
+  packages = with pkgs; [
+    go
+    jdk
     android-tools
-    go gomobile
-    jdk gcc
+    androidComposition.androidsdk
   ];
 
+  ANDROID_HOME = "${androidComposition.androidsdk}/libexec/android-sdk";
+  ANDROID_SDK_ROOT = ANDROID_HOME;
+  ANDROID_NDK_ROOT = "${ANDROID_HOME}/ndk-bundle";
+  JAVA_HOME = pkgs.jdk.home;
+
   shellHook = ''
+    export GOPATH="$HOME/go"
+    export PATH="$GOPATH/bin:$PATH"
+
     export ALLOW_NINJA_ENV=true
-    export GOPATH=/home/akakou/go
     export USE_CCACHE=1
-    export ANDROID_JAVA_HOME=${pkgs.jdk.home}sdkmanager install avd
-    export LD_LIBRARY_PATH=/usr/lib:/usr/lib32
+    export ANDROID_API=23
+    export ZK_BAN_BENCH_PATH=.
+    export ZK_BAN_AAR=zk-ban-bench.aar
 
-    ZK_BAN_BENCH_PATH=.
-    ZK_BAN_BENCH_AAR=zk-ban-bench.aar
-    ZK_BAN_BENCH_PACKAGE=github.com/akakou/benchzkban/crypto
-    ANDROID_API=23 
+    if ! command -v gomobile >/dev/null 2>&1; then
+      go install golang.org/x/mobile/cmd/gomobile@latest
+    fi
 
-    export GOPATH=$HOME/go
-    gomobile clean
     gomobile init
-
-    cd $ZK_BAN_BENCH_PATH
-    gomobile bind -o $ZK_BAN_BENCH_AAR -target=android -androidapi $ANDROID_API .
+    gomobile bind \
+      -v \
+      -target=android \
+      -androidapi "$ANDROID_API" \
+      -o "$ZK_BAN_AAR" \
+      .
   '';
 }
